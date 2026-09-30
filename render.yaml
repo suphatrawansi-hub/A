@@ -11,4 +11,4 @@ services:
       - key: FLASK_SECRET_KEY
         generateValue: true
       - key: GEMINI_MODEL
-        value: gemini-3.8-flash
+        value: gemini-3.6-flash
