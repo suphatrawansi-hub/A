@@ -1,6 +1,8 @@
 import os
 import secrets
+import sqlite3
 import uuid
+from contextlib import contextmanager
 
 from flask import Flask, jsonify, render_template, request, session
 from dotenv import load_dotenv
@@ -21,6 +23,63 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY") or secrets.token_hex(32)
 model_name = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
 chat_sessions = {}
+chat_db_path = os.getenv("CHAT_DB_PATH", os.path.join(app.instance_path, "chat_history.sqlite3"))
+
+
+@contextmanager
+def connect_db():
+    os.makedirs(os.path.dirname(os.path.abspath(chat_db_path)), exist_ok=True)
+    database = sqlite3.connect(chat_db_path, timeout=10)
+    try:
+        yield database
+        database.commit()
+    except Exception:
+        database.rollback()
+        raise
+    finally:
+        database.close()
+
+
+def init_db():
+    with connect_db() as database:
+        database.execute(
+            """
+            CREATE TABLE IF NOT EXISTS messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                text TEXT NOT NULL
+            )
+            """
+        )
+        database.execute(
+            "CREATE INDEX IF NOT EXISTS messages_by_session ON messages(session_id, id)"
+        )
+
+
+def load_messages(session_id):
+    with connect_db() as database:
+        rows = database.execute(
+            "SELECT role, text FROM messages WHERE session_id = ? ORDER BY id",
+            (session_id,),
+        ).fetchall()
+    return [{"role": role, "text": text} for role, text in rows]
+
+
+def save_messages(session_id, messages):
+    with connect_db() as database:
+        database.executemany(
+            "INSERT INTO messages (session_id, role, text) VALUES (?, ?, ?)",
+            [(session_id, message["role"], message["text"]) for message in messages],
+        )
+
+
+def delete_messages(session_id):
+    with connect_db() as database:
+        database.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
+
+
+init_db()
 
 
 def get_chat():
@@ -34,14 +93,24 @@ def get_chat():
         if not api_key:
             raise ValueError("ยังไม่พบ GOOGLE_API_KEY กรุณาตั้งค่าในไฟล์ .env ก่อน")
 
+        messages = load_messages(session_id)
+        history = [
+            types.Content(
+                role="user" if message["role"] == "user" else "model",
+                parts=[types.Part.from_text(text=message["text"])],
+            )
+            for message in messages
+        ]
         client = genai.Client(api_key=api_key)
         chat_sessions[session_id] = {
+            "session_id": session_id,
             "client": client,
             "chat": client.chats.create(
                 model=model_name,
                 config=types.GenerateContentConfig(system_instruction=ERU_PERSONALITY),
+                history=history,
             ),
-            "messages": [],
+            "messages": messages,
         }
     return chat_sessions[session_id]
 
@@ -59,8 +128,7 @@ def status():
 @app.get("/api/history")
 def history():
     session_id = session.get("chat_id")
-    messages = chat_sessions.get(session_id, {}).get("messages", [])
-    return jsonify({"messages": messages})
+    return jsonify({"messages": load_messages(session_id) if session_id else []})
 
 
 @app.post("/api/chat")
@@ -82,9 +150,12 @@ def send_message():
         return jsonify({"error": "ส่งข้อความไม่สำเร็จ ลองใหม่อีกครั้งนะ"}), 502
 
     reply = response.text or "(เอรุยังนึกคำตอบไม่ออก ลองถามใหม่สิ)"
-    chat_state["messages"].extend(
-        [{"role": "user", "text": message}, {"role": "assistant", "text": reply}]
-    )
+    new_messages = [
+        {"role": "user", "text": message},
+        {"role": "assistant", "text": reply},
+    ]
+    save_messages(chat_state["session_id"], new_messages)
+    chat_state["messages"].extend(new_messages)
     return jsonify({"reply": reply})
 
 
@@ -92,6 +163,7 @@ def send_message():
 def reset_chat():
     session_id = session.pop("chat_id", None)
     if session_id:
+        delete_messages(session_id)
         chat_state = chat_sessions.pop(session_id, None)
         if chat_state:
             chat_state["client"].close()

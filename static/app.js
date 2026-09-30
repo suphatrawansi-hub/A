@@ -8,6 +8,7 @@ const resetButton = document.querySelector("#reset-button");
 const statusText = document.querySelector("#status-text");
 const statusIndicator = document.querySelector("#status-indicator");
 const connectionLabel = document.querySelector("#connection-label");
+let storedMessageCount = 0;
 
 function addMessage(role, text, pending = false) {
   welcome.hidden = true;
@@ -55,8 +56,10 @@ async function loadStatus() {
 async function loadHistory() {
   try {
     const response = await fetch("/api/history");
+    if (!response.ok) throw new Error("History request failed");
     const data = await response.json();
     data.messages.forEach((message) => addMessage(message.role, message.text));
+    storedMessageCount = data.messages.length;
   } catch {
     addMessage("assistant", "โหลดบทสนทนาไม่สำเร็จ ลองรีเฟรชหน้าอีกทีนะ");
   }
@@ -66,12 +69,41 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const message = input.value.trim();
   if (!message || sendButton.disabled) return;
+  await historyReady;
 
   addMessage("user", message);
   input.value = "";
   input.style.height = "auto";
   sendButton.disabled = true;
   const pending = addMessage("assistant", "เอรุกำลังคิดอยู่...", true);
+  const previousMessageCount = storedMessageCount;
+  let replyDisplayed = false;
+  let checkingHistory = false;
+
+  const historyPoll = window.setInterval(async () => {
+    if (replyDisplayed || checkingHistory) return;
+    checkingHistory = true;
+    try {
+      const response = await fetch("/api/history");
+      if (!response.ok) return;
+      const data = await response.json();
+      const newMessages = data.messages.slice(previousMessageCount);
+      if (
+        newMessages.length >= 2 &&
+        newMessages[0].role === "user" &&
+        newMessages[0].text === message &&
+        newMessages[1].role === "assistant"
+      ) {
+        replyDisplayed = true;
+        storedMessageCount = data.messages.length;
+        pending.remove();
+        addMessage("assistant", newMessages[1].text);
+      }
+    } catch {
+    } finally {
+      checkingHistory = false;
+    }
+  }, 1500);
 
   try {
     const response = await fetch("/api/chat", {
@@ -80,12 +112,20 @@ form.addEventListener("submit", async (event) => {
       body: JSON.stringify({ message }),
     });
     const data = await response.json();
-    pending.remove();
-    addMessage("assistant", response.ok ? data.reply : data.error);
+    if (!replyDisplayed) {
+      replyDisplayed = true;
+      pending.remove();
+      addMessage("assistant", response.ok ? data.reply : data.error);
+      if (response.ok) storedMessageCount += 2;
+    }
   } catch {
-    pending.remove();
-    addMessage("assistant", "เชื่อมต่อไม่สำเร็จ ลองส่งใหม่อีกทีนะ");
+    if (!replyDisplayed) {
+      replyDisplayed = true;
+      pending.remove();
+      addMessage("assistant", "เชื่อมต่อไม่สำเร็จ ลองส่งใหม่อีกทีนะ");
+    }
   } finally {
+    window.clearInterval(historyPoll);
     sendButton.disabled = false;
     input.focus();
   }
@@ -118,4 +158,5 @@ resetButton.addEventListener("click", async () => {
   input.focus();
 });
 
-Promise.all([loadStatus(), loadHistory()]);
+const historyReady = loadHistory();
+loadStatus();

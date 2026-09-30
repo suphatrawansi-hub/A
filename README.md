@@ -1,6 +1,6 @@
 # Suzune Eru Chat
 
-เว็บแชตภาษาไทยกับ Suzune Eru ที่ใช้ Gemini API ประวัติแชตจะแยกตาม browser session และเก็บไว้ในหน่วยความจำระหว่างที่เซิร์ฟเวอร์ทำงาน
+เว็บแชตภาษาไทยกับ Suzune Eru ที่ใช้ Gemini API ประวัติแชตแยกตาม browser session และบันทึกใน SQLite
 
 ## ติดตั้งและเริ่มใช้งาน (PowerShell)
 
@@ -18,7 +18,7 @@ Copy-Item .env.example .env
 
 เปิดเว็บเบราว์เซอร์ที่ <http://127.0.0.1:5000>
 
-กำหนดชื่อโมเดลได้ด้วย `GEMINI_MODEL` ใน `.env` ส่วน `PORT` ใช้เปลี่ยนพอร์ตเริ่มต้นได้ ประวัติแชตจะถูกล้างเมื่อปิดหรือเริ่มเซิร์ฟเวอร์ใหม่
+กำหนดชื่อโมเดลได้ด้วย `GEMINI_MODEL` ใน `.env` ส่วน `PORT` ใช้เปลี่ยนพอร์ตเริ่มต้นได้ ฐานข้อมูลอยู่ที่ `instance/chat_history.sqlite3` และเปลี่ยนตำแหน่งได้ด้วย `CHAT_DB_PATH`
 
 ## นำขึ้นออนไลน์ด้วย Render
 
@@ -27,4 +27,4 @@ Copy-Item .env.example .env
 3. ตอน Render ขอค่า `GOOGLE_API_KEY` ให้กรอก API key ในหน้า dashboard ของ Render เท่านั้น ส่วน `FLASK_SECRET_KEY` จะถูกสร้างให้อัตโนมัติ
 4. เมื่อ deploy สำเร็จ Render จะแสดง public URL ของเว็บ
 
-การตั้งค่า deploy อยู่ใน `render.yaml` และใช้ Gunicorn เป็น production server ประวัติแชตเก็บในหน่วยความจำของ instance จึงหายเมื่อ instance เริ่มใหม่; แพ็กเกจ Free อาจพักการทำงานเมื่อไม่มีผู้เข้าใช้
+การตั้งค่า deploy อยู่ใน `render.yaml` และใช้ Gunicorn เป็น production server ไฟล์ SQLite อยู่บน ephemeral filesystem ของ Render Free จึงอาจหายเมื่อ deploy ใหม่หรือ instance ถูกแทนที่; หากต้องเก็บถาวรต้องใช้ persistent disk หรือฐานข้อมูลภายนอก แพ็กเกจ Free อาจพักการทำงานเมื่อไม่มีผู้เข้าใช้
