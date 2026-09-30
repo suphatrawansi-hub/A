@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: suzune-eru-chat
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn main:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash

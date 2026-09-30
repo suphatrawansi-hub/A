@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#173d38">
+    <title>Suzune Eru | คุยกับเอรุ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="ข้อมูลแชต">
+        <a class="brand" href="/" aria-label="Suzune Eru หน้าหลัก">
+          <span class="brand-mark">E</span>
+          <span class="brand-name">suzune <b>eru</b></span>
+        </a>
+
+        <div class="side-content">
+          <p class="eyebrow">YOUR CHAT BUDDY</p>
+          <div class="profile">
+            <div class="profile-avatar" aria-hidden="true"><span>E</span><i></i></div>
+            <div class="profile-copy">
+              <strong>ซูซูเนะ เอรุ</strong>
+              <span id="connection-label">กำลังตรวจสอบ...</span>
+            </div>
+          </div>
+          <div class="side-divider"></div>
+          <p class="eyebrow recent-label">บทสนทนา</p>
+          <div class="conversation-item" aria-current="page">
+            <span class="conversation-dot"></span>
+            <span>คุยกับเอรุ</span>
+            <span class="conversation-now">ตอนนี้</span>
+          </div>
+        </div>
+
+        <div class="sidebar-bottom">
+          <div class="status-line"><span class="status-indicator" id="status-indicator"></span><span id="status-text">กำลังเชื่อมต่อ</span></div>
+          <span class="version-label">A LITTLE CHAOS, A LOT OF CHAT</span>
+        </div>
+      </aside>
+
+      <main class="chat-area">
+        <header class="topbar">
+          <div class="mobile-brand"><span class="brand-mark">E</span><span>suzune <b>eru</b></span></div>
+          <div class="chat-title"><span class="title-indicator"></span><span>คุยกับเอรุ</span></div>
+          <button class="icon-button" id="reset-button" type="button" title="เริ่มบทสนทนาใหม่" aria-label="เริ่มบทสนทนาใหม่">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0-14.9-4L3 10m0-6v6h6m-5 3a8.1 8.1 0 0 0 14.9 4L21 14m0 6v-6h-6"/></svg>
+          </button>
+        </header>
+
+        <section class="conversation" id="conversation" aria-live="polite" aria-label="บทสนทนา">
+          <div class="welcome" id="welcome">
+            <div class="welcome-avatar" aria-hidden="true"><span>E</span><i></i></div>
+            <p class="welcome-kicker">YOUR FAVORITE TROUBLEMAKER</p>
+            <h1>มีอะไรให้เอรุ<br><span>ช่วยไหมล่ะ?</span></h1>
+            <p class="welcome-copy">ถามมาได้เลย แต่ถ้าคำถามแปลกมากก็อย่าหาว่าเอรุไม่เตือนนะ 555</p>
+            <div class="suggestions" aria-label="ตัวอย่างคำถาม">
+              <button type="button" class="suggestion">วันนี้เป็นไงบ้าง?</button>
+              <button type="button" class="suggestion">เล่าเรื่องตลกให้ฟังหน่อย</button>
+              <button type="button" class="suggestion">ช่วยคิดอะไรสนุกๆ ที</button>
+            </div>
+          </div>
+          <div class="messages" id="messages"></div>
+        </section>
+
+        <div class="composer-wrap">
+          <form class="composer" id="chat-form">
+            <textarea id="message-input" rows="1" placeholder="พิมพ์ข้อความคุยกับเอรุ..." aria-label="ข้อความของคุณ" maxlength="4000"></textarea>
+            <button class="send-button" id="send-button" type="submit" aria-label="ส่งข้อความ" title="ส่งข้อความ">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+            </button>
+          </form>
+          <p class="composer-note">เอรุอาจตอบพลาดได้บ้าง อย่าเพิ่งเชื่อหมดล่ะ</p>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
