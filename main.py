@@ -74,7 +74,10 @@ def send_message():
         response = chat_state["chat"].send_message(message)
     except ValueError as error:
         return jsonify({"error": str(error)}), 503
-    except Exception:
+    except Exception as error:
+        if getattr(error, "code", None) == 503:
+            app.logger.warning("Gemini is temporarily unavailable")
+            return jsonify({"error": "Gemini กำลังมีผู้ใช้เยอะ ลองส่งข้อความอีกครั้งในอีกสักครู่นะ"}), 503
         app.logger.exception("Gemini request failed")
         return jsonify({"error": "ส่งข้อความไม่สำเร็จ ลองใหม่อีกครั้งนะ"}), 502
 
