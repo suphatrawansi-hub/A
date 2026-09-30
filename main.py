@@ -19,7 +19,7 @@ ERU_PERSONALITY = """
 load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY") or secrets.token_hex(32)
-model_name = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip()
+model_name = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
 chat_sessions = {}
 
 
