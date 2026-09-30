@@ -36,6 +36,7 @@ def get_chat():
 
         client = genai.Client(api_key=api_key)
         chat_sessions[session_id] = {
+            "client": client,
             "chat": client.chats.create(
                 model=model_name,
                 config=types.GenerateContentConfig(system_instruction=ERU_PERSONALITY),
@@ -88,7 +89,9 @@ def send_message():
 def reset_chat():
     session_id = session.pop("chat_id", None)
     if session_id:
-        chat_sessions.pop(session_id, None)
+        chat_state = chat_sessions.pop(session_id, None)
+        if chat_state:
+            chat_state["client"].close()
     return jsonify({"ok": True})
 
 
